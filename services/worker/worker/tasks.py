@@ -1,6 +1,7 @@
 from celery import Celery
 
 from worker.config import settings
+from worker.pipeline.analyze import analyze_existing_task as _analyze
 from worker.pipeline.runner import process_video_task as _process
 
 celery_app = Celery(
@@ -23,3 +24,8 @@ celery_app.conf.update(
 @celery_app.task(name="worker.tasks.process_video_task", bind=True, max_retries=0)
 def process_video_task(self, task_id: str):
     return _process(task_id)
+
+
+@celery_app.task(name="worker.tasks.analyze_task", bind=True, max_retries=0)
+def analyze_task(self, task_id: str, provider_ids: list[str] | None = None):
+    return _analyze(task_id, provider_ids)

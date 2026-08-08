@@ -4,6 +4,7 @@ from typing import Any
 
 from worker.config import settings
 from worker.db import AppSetting, SessionLocal, Task
+from worker.pipeline.checkpoint import TaskCancelled
 
 
 def runtime_settings() -> dict[str, Any]:
@@ -21,6 +22,9 @@ def runtime_settings() -> dict[str, Any]:
         "video_cache_root": settings.video_cache_root or settings.cache_root,
         "auto_delete_video": settings.auto_delete_video,
         "providers_file": settings.providers_file,
+        "analysis_language": getattr(settings, "analysis_language", None)
+        or settings.default_locale,
+        "prefer_soft_subtitles": bool(getattr(settings, "prefer_soft_subtitles", True)),
     }
     db = SessionLocal()
     try:
@@ -67,3 +71,39 @@ def update_task(
         db.commit()
     finally:
         db.close()
+
+
+def get_task_meta(task_id: str) -> dict[str, Any]:
+    db = SessionLocal()
+    try:
+        row = db.get(Task, task_id)
+        if not row:
+            return {}
+        return dict(row.meta or {})
+    finally:
+        db.close()
+
+
+def is_cancel_requested(task_id: str) -> bool:
+    """Return True when task.meta.cancel_requested is truthy."""
+    db = SessionLocal()
+    try:
+        row = db.get(Task, task_id)
+        if not row:
+            return False
+        return bool((row.meta or {}).get("cancel_requested"))
+    finally:
+        db.close()
+
+
+def raise_if_cancelled(task_id: str, *, mark_cancelling: bool = True) -> None:
+    """Raise :class:`TaskCancelled` when a cancel has been requested for ``task_id``.
+
+    When ``mark_cancelling`` is set the task status is flipped to ``cancelling`` before
+    the exception propagates so the UI can reflect the graceful shutdown.
+    """
+    if not is_cancel_requested(task_id):
+        return
+    if mark_cancelling:
+        update_task(task_id, status="cancelling", message="cancelling")
+    raise TaskCancelled(f"task {task_id} cancelled")

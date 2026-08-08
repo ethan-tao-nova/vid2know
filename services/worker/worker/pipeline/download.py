@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -132,6 +133,51 @@ def download_media(
         "duration": float(info.get("duration") or 0),
         "webpage_url": info.get("webpage_url") or url,
     }
+
+
+def clip_media(
+    video_path: str,
+    work_dir: Path,
+    start_sec: float,
+    end_sec: float,
+) -> str:
+    """Cut ``[start_sec, end_sec]`` out of ``video_path`` with ffmpeg.
+
+    Returns the path to the clipped file (written into ``work_dir``). The original file
+    is left untouched. Timestamps are clamped to a sane order; ``end_sec <= 0`` means
+    "until the end of the source". Re-encoding is used so the clip starts at t=0 with
+    accurate keyframes, which is required for downstream scene detection and ASR.
+    """
+    src = Path(video_path)
+    if not src.exists():
+        raise RuntimeError(f"clip source missing: {video_path}")
+
+    start = max(0.0, float(start_sec or 0.0))
+    end = float(end_sec or 0.0)
+
+    ensure_dir(Path(work_dir))
+    out_path = Path(work_dir) / f"{src.stem}_clip{src.suffix or '.mp4'}"
+
+    cmd = ["ffmpeg", "-y", "-ss", f"{start:.3f}", "-i", str(src)]
+    if end > start:
+        cmd += ["-t", f"{end - start:.3f}"]
+    cmd += [
+        "-c:v",
+        "libx264",
+        "-preset",
+        "veryfast",
+        "-c:a",
+        "aac",
+        "-movflags",
+        "+faststart",
+        str(out_path),
+    ]
+
+    proc = subprocess.run(cmd, capture_output=True)
+    if proc.returncode != 0 or not out_path.exists():
+        stderr = proc.stderr.decode("utf-8", errors="ignore")[-800:]
+        raise RuntimeError(f"ffmpeg clip failed: {stderr}")
+    return str(out_path)
 
 
 def cleanup_media(
