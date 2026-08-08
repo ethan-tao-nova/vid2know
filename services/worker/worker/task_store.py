@@ -18,6 +18,8 @@ def runtime_settings() -> dict[str, Any]:
         "whisper_device": settings.whisper_device,
         "whisper_compute_type": settings.whisper_compute_type,
         "cache_root": settings.cache_root,
+        "video_cache_root": settings.video_cache_root or settings.cache_root,
+        "auto_delete_video": settings.auto_delete_video,
         "providers_file": settings.providers_file,
     }
     db = SessionLocal()

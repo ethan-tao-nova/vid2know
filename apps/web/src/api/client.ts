@@ -37,7 +37,9 @@ export type Provider = {
 
 export type Settings = {
   notes_root: string;
+  video_cache_root: string;
   cookies_file: string;
+  auto_delete_video: boolean;
   whisper_model: string;
   ocr_enabled: boolean;
   scene_threshold: number;

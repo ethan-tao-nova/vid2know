@@ -66,7 +66,8 @@ def resolve_providers(provider_ids: list[str]) -> list[dict[str, Any]]:
             continue
         if not p.get("enabled"):
             continue
-        if not p.get("api_key"):
+        key = (p.get("api_key") or "").lower()
+        if not key or "replace_me" in key or "your_key" in key:
             continue
         selected.append(p)
     return selected

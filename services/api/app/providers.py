@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +16,15 @@ def _mask(key: str) -> str:
     if len(key) <= 8:
         return "*" * len(key)
     return key[:4] + "…" + key[-4:]
+
+
+def _has_real_key(key: str) -> bool:
+    if not key:
+        return False
+    lowered = key.lower()
+    if "replace_me" in lowered or "your_key" in lowered or "changeme" in lowered:
+        return False
+    return True
 
 
 def load_file_providers() -> list[dict[str, Any]]:
@@ -67,6 +75,7 @@ def providers_public(db: Session) -> list[dict[str, Any]]:
     out = []
     for p in merge_providers(db):
         key = p.get("api_key") or ""
+        real = _has_real_key(key)
         out.append(
             {
                 "id": p["id"],
@@ -77,8 +86,8 @@ def providers_public(db: Session) -> list[dict[str, Any]]:
                 "default_model": p.get("default_model") or "",
                 "temperature": float(p.get("temperature") or 0.3),
                 "timeout_seconds": int(p.get("timeout_seconds") or 120),
-                "has_api_key": bool(key),
-                "api_key_masked": _mask(key),
+                "has_api_key": real,
+                "api_key_masked": _mask(key) if real else "",
             }
         )
     return out

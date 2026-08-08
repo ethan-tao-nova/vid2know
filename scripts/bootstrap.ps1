@@ -13,5 +13,9 @@ if (-not (Test-Path "config\providers.yaml")) {
 }
 
 New-Item -ItemType Directory -Force -Path "data\notes","data\uploads","data\cache" | Out-Null
-docker compose -f deploy/docker-compose.yml up -d --build
-Write-Host "Vid2Know is starting. Open http://localhost:8080"
+docker compose --env-file .env -f deploy/docker-compose.yml up -d --build
+$port = "8080"
+Get-Content .env | ForEach-Object {
+  if ($_ -match '^\s*APP_PORT\s*=\s*(.+)$') { $port = $Matches[1].Trim() }
+}
+Write-Host "Vid2Know is starting. Open http://localhost:$port"

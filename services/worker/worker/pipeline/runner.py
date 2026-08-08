@@ -7,7 +7,7 @@ from pathlib import Path
 from worker.ai.hub import analyze_with_provider, build_analysis_context, resolve_providers
 from worker.db import SessionLocal, Task
 from worker.pipeline.assemble import append_analysis_index, write_meta, write_note_md, write_transcript_md
-from worker.pipeline.download import download_media
+from worker.pipeline.download import cleanup_media, download_media
 from worker.pipeline.frames import extract_keyframes
 from worker.pipeline.ocr import apply_ocr
 from worker.pipeline.transcript import get_transcript
@@ -29,9 +29,12 @@ def process_video_task(task_id: str) -> dict:
         db.close()
 
     cfg = runtime_settings()
-    cache_root = Path(cfg["cache_root"])
+    # video_cache_root overrides cache_root when set in settings UI
+    cache_root = Path(cfg.get("video_cache_root") or cfg["cache_root"])
     notes_root = Path(cfg["notes_root"])
+    auto_delete = bool(cfg.get("auto_delete_video", True))
     work_dir = ensure_dir(cache_root / task_id)
+    video_path = ""
 
     try:
         update_task(task_id, status="downloading", progress=5, message="downloading media")
@@ -46,14 +49,18 @@ def process_video_task(task_id: str) -> dict:
             webpage_url = None
             info_meta = {"source": "upload"}
         else:
-            cookies = cfg.get("cookies_file") or None
+            cookies = (cfg.get("cookies_file") or "").strip() or None
             dl = download_media(url=source_url, work_dir=work_dir, cookies_file=cookies)
             video_path = dl["video_path"]
             title = dl["title"]
             duration = dl["duration"]
             subtitle_paths = dl["subtitle_paths"]
             webpage_url = dl["webpage_url"]
-            info_meta = {"yt_dlp_id": dl["info"].get("id"), "extractor": dl["info"].get("extractor")}
+            info_meta = {
+                "yt_dlp_id": dl["info"].get("id"),
+                "extractor": dl["info"].get("extractor"),
+                "video_cache_root": str(cache_root),
+            }
 
         update_task(task_id, title=title, progress=20, message="transcribing")
 
@@ -97,8 +104,9 @@ def process_video_task(task_id: str) -> dict:
                 **info_meta,
                 "whisper_model": cfg.get("whisper_model"),
                 "ocr_enabled": cfg.get("ocr_enabled"),
+                "auto_delete_video": auto_delete,
                 "versions": {
-                    "pipeline": "0.1.0",
+                    "pipeline": "0.1.1",
                 },
             },
         )
@@ -125,6 +133,7 @@ def process_video_task(task_id: str) -> dict:
                 transcript_text=transcript_text,
                 ocr_snippets=ocr_snippets,
             )
+
             def _run_one(provider: dict) -> tuple[str, str, str, bool, str]:
                 safe_name = slugify(provider.get("default_model") or provider["id"])
                 out_rel = f"analysis/{safe_name}.md"
@@ -155,19 +164,28 @@ def process_video_task(task_id: str) -> dict:
             append_analysis_index(notes_dir / "note.md", analysis_links)
             analysis_dir.mkdir(parents=True, exist_ok=True)
 
+        # Delete temporary video after successful note generation.
+        cleanup_info = cleanup_media(
+            work_dir=work_dir if source_type == "url" else None,
+            video_path=video_path,
+            source_type=source_type,
+            auto_delete=auto_delete,
+        )
+
         update_task(
             task_id,
             status="completed",
             progress=100,
-            message="done",
+            message="done" if not auto_delete else "done (video cleaned)",
             notes_path=str(notes_dir),
             meta_patch={
                 "transcript_source": transcript_source,
                 "keyframe_count": len(keyframes),
                 "analysis_count": len(analysis_links),
+                "cleanup": cleanup_info,
             },
         )
-        return {"task_id": task_id, "notes_dir": str(notes_dir)}
+        return {"task_id": task_id, "notes_dir": str(notes_dir), "cleanup": cleanup_info}
     except Exception as exc:  # noqa: BLE001
         update_task(task_id, status="failed", message="failed", error=str(exc))
         raise

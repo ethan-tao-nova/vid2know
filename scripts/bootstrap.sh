@@ -14,5 +14,5 @@ if [[ ! -f config/providers.yaml ]]; then
 fi
 
 mkdir -p data/notes data/uploads data/cache
-docker compose -f deploy/docker-compose.yml up -d --build
-echo "Vid2Know is starting. Open http://localhost:8080"
+docker compose --env-file .env -f deploy/docker-compose.yml up -d --build
+echo "Vid2Know is starting. Open http://localhost:${APP_PORT:-8080}"

@@ -14,8 +14,10 @@ class Settings(BaseSettings):
     notes_root: str = "/data/notes"
     upload_root: str = "/data/uploads"
     cache_root: str = "/data/cache"
+    video_cache_root: str = "/data/cache"
     cookies_file: str = ""
     providers_file: str = "/config/providers.yaml"
+    auto_delete_video: bool = True
 
     whisper_model: str = "base"
     whisper_device: str = "cpu"

@@ -30,7 +30,9 @@ class TaskOut(BaseModel):
 
 class SettingsOut(BaseModel):
     notes_root: str
+    video_cache_root: str
     cookies_file: str
+    auto_delete_video: bool = True
     whisper_model: str
     ocr_enabled: bool
     scene_threshold: float
@@ -40,7 +42,9 @@ class SettingsOut(BaseModel):
 
 class SettingsUpdate(BaseModel):
     notes_root: Optional[str] = None
+    video_cache_root: Optional[str] = None
     cookies_file: Optional[str] = None
+    auto_delete_video: Optional[bool] = None
     whisper_model: Optional[str] = None
     ocr_enabled: Optional[bool] = None
     scene_threshold: Optional[float] = None

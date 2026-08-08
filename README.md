@@ -36,10 +36,12 @@ chmod +x scripts/bootstrap.sh && ./scripts/bootstrap.sh
 cp config/.env.example .env
 cp config/providers.example.yaml config/providers.yaml
 # 编辑 .env 与 providers.yaml（填入至少一个 API Key，可选）
-docker compose -f deploy/docker-compose.yml up -d --build
+docker compose --env-file .env -f deploy/docker-compose.yml up -d --build
 ```
 
-浏览器打开：**http://localhost:8080**
+浏览器打开：**http://localhost:8080**（若 `.env` 中改了 `APP_PORT` 则用对应端口）
+
+> 注意：必须加 `--env-file .env`，因为 Compose 文件在 `deploy/` 下，默认不会读取仓库根目录的 `.env`。
 
 笔记默认写到仓库内 `data/notes/`（可在设置页或 `.env` 的挂载路径调整）。
 
@@ -73,15 +75,12 @@ providers:
 ```bash
 cd apps/desktop
 npm install
+# 若网关端口不是 8080（例如本机占用），指定 URL：
+# PowerShell: $env:VID2KNOW_URL="http://127.0.0.1:18080"
 npm start
 ```
 
-默认打开 `http://127.0.0.1:8080`。可用环境变量覆盖：
-
-```bash
-# Windows PowerShell
-$env:VID2KNOW_URL="http://127.0.0.1:8080"; npm start
-```
+默认打开 `http://127.0.0.1:8080`。`apps/desktop/.npmrc` 已配置国内 Electron 镜像。
 
 桌面端设置页可浏览本机「笔记目录」与 Cookie 文件。注意：Docker 模式下容器只能写入已挂载卷；若选择宿主机其它盘符路径，请自行把该路径挂进 `deploy/docker-compose.yml` 的 `api`/`worker` volumes。
 
@@ -119,6 +118,7 @@ npm run dev
 
 - [架构说明](docs/ARCHITECTURE.md)
 - [配置说明](docs/CONFIG.md)
+- [GitHub 发布](docs/GITHUB.md)
 
 ## 合规
 

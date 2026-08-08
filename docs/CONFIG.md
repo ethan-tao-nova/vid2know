@@ -52,3 +52,19 @@ To use another host folder, edit `deploy/docker-compose.yml` volumes for `api` a
 ```
 
 Keep `NOTES_ROOT=/data/notes` inside the container (or update Settings to match the in-container path).
+
+## Temporary video download directory
+
+Default: `./data/cache:/data/cache` → Settings `video_cache_root=/data/cache`.
+
+Analysis finishes with `auto_delete_video=true` (default): temporary video files under the cache dir are removed; Markdown notes and keyframe images are kept.
+
+## Bilibili 412
+
+If download fails with HTTP 412:
+
+1. Login to bilibili.com in a browser
+2. Export Netscape `cookies.txt`
+3. Save as `config/cookies.txt`
+4. Set Settings `cookies_file` to `/config/cookies.txt` (or `COOKIES_FILE=/config/cookies.txt` in `.env`)
+5. Retry the task
