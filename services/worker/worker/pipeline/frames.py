@@ -6,6 +6,23 @@ from pathlib import Path
 from worker.pipeline.types import Keyframe, ensure_dir, format_filename_ts
 
 
+def adaptive_max_keyframes(duration: float, configured: int) -> int:
+    """Scale the keyframe budget to video length, bounded by ``configured``.
+
+    Short clips do not need the full configured budget, while very long videos benefit
+    from a few more frames. Roughly one frame per 20 seconds, clamped to
+    ``[8, configured]`` (never below a small floor so short clips still get frames).
+    """
+    configured = int(configured or 80)
+    if configured <= 0:
+        configured = 80
+    if not duration or duration <= 0:
+        return configured
+    target = int(round(duration / 20.0))
+    floor = min(8, configured)
+    return max(floor, min(configured, target))
+
+
 def _extract_frame(video_path: str, timestamp: float, out_path: Path) -> None:
     cmd = [
         "ffmpeg",

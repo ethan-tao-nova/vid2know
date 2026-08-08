@@ -12,8 +12,10 @@ class Settings(BaseSettings):
     notes_root: str = "/data/notes"
     upload_root: str = "/data/uploads"
     cache_root: str = "/data/cache"
+    video_cache_root: str = "/data/cache"
     cookies_file: str = ""
     providers_file: str = "/config/providers.yaml"
+    auto_delete_video: bool = True
 
     whisper_model: str = "base"
     whisper_device: str = "cpu"
@@ -22,6 +24,9 @@ class Settings(BaseSettings):
     scene_threshold: float = 27.0
     max_keyframes: int = 80
     default_locale: str = "zh-CN"
+    analysis_language: str = "zh-CN"
+    prefer_soft_subtitles: bool = True
+    fernet_key_file: str = "/config/fernet.key"
 
 
 settings = Settings()

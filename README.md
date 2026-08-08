@@ -6,11 +6,13 @@
 
 ## 功能
 
-- 输入视频 URL（B 站 / YouTube 等，底层 `yt-dlp`）或上传本地视频
+- 输入视频 URL（B 站 / YouTube 等，底层 `yt-dlp`）或上传本地视频；支持时间片段裁切
 - 优先官方字幕，无字幕则 `faster-whisper` 转写
-- 场景检测抽关键帧，图片保存到可配置本地目录
-- PaddleOCR 提取画面文字
-- Cherry Studio 风格 Provider Hub：OpenAI Compatible / Claude / Gemini，随意切换，多模型并行分析
+- 场景检测抽关键帧（按时长自适应上限），OCR 提取画面文字
+- 分析模板：图文知识点 / 精要 / 教程 / 考点；多模型并行 + Token 用量
+- 取消 / 阶段重试 / 检查点续跑；笔记 ZIP / MD / DOCX / PDF / XMind 导出
+- 任务搜索（精确 / 语义）、暗色主题、zh/en/ja 界面
+- Provider Hub（API Key Fernet 本地加密）+ 浏览器扩展「发送到影知」
 - Web（Docker）+ Electron 桌面壳
 
 ## 快速开始（Docker）
@@ -36,10 +38,12 @@ chmod +x scripts/bootstrap.sh && ./scripts/bootstrap.sh
 cp config/.env.example .env
 cp config/providers.example.yaml config/providers.yaml
 # 编辑 .env 与 providers.yaml（填入至少一个 API Key，可选）
-docker compose -f deploy/docker-compose.yml up -d --build
+docker compose --env-file .env -f deploy/docker-compose.yml up -d --build
 ```
 
-浏览器打开：**http://localhost:8080**
+浏览器打开：**http://localhost:8080**（若 `.env` 中改了 `APP_PORT` 则用对应端口）
+
+> 注意：必须加 `--env-file .env`，因为 Compose 文件在 `deploy/` 下，默认不会读取仓库根目录的 `.env`。
 
 笔记默认写到仓库内 `data/notes/`（可在设置页或 `.env` 的挂载路径调整）。
 
@@ -73,15 +77,12 @@ providers:
 ```bash
 cd apps/desktop
 npm install
+# 若网关端口不是 8080（例如本机占用），指定 URL：
+# PowerShell: $env:VID2KNOW_URL="http://127.0.0.1:18080"
 npm start
 ```
 
-默认打开 `http://127.0.0.1:8080`。可用环境变量覆盖：
-
-```bash
-# Windows PowerShell
-$env:VID2KNOW_URL="http://127.0.0.1:8080"; npm start
-```
+默认打开 `http://127.0.0.1:8080`。`apps/desktop/.npmrc` 已配置国内 Electron 镜像。
 
 桌面端设置页可浏览本机「笔记目录」与 Cookie 文件。注意：Docker 模式下容器只能写入已挂载卷；若选择宿主机其它盘符路径，请自行把该路径挂进 `deploy/docker-compose.yml` 的 `api`/`worker` volumes。
 
@@ -119,6 +120,7 @@ npm run dev
 
 - [架构说明](docs/ARCHITECTURE.md)
 - [配置说明](docs/CONFIG.md)
+- [GitHub 发布](docs/GITHUB.md)
 
 ## 合规
 

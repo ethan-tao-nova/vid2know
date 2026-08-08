@@ -58,3 +58,13 @@ ipcMain.handle("pick-cookies-file", async () => {
 });
 
 ipcMain.handle("get-api-base", async () => API_BASE);
+
+ipcMain.handle("open-path", async (_event, target) => {
+  if (!target || typeof target !== "string") return false;
+  // shell.openPath returns "" on success, or an error string on failure.
+  const result = await shell.openPath(target);
+  if (result) {
+    return result;
+  }
+  return true;
+});
