@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>Vid2Know</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="header">
+      <span class="header__mark" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <rect x="2.5" y="4" width="19" height="16" rx="3" stroke="currentColor" stroke-width="1.6" />
+          <path d="M2.5 9h19M8 4v16M16 4v16" stroke="currentColor" stroke-width="1.2" opacity="0.7" />
+          <path d="M10 12.5l4 2-4 2v-4z" fill="currentColor" />
+        </svg>
+      </span>
+      <div class="header__text">
+        <div class="header__title">影知 Vid2Know</div>
+        <div class="header__sub">把视频变成可检索的 Markdown 知识</div>
+      </div>
+    </header>
+
+    <main class="content">
+      <label class="field">
+        <span class="field__label">当前页面</span>
+        <div class="page-preview">
+          <div id="pageTitle" class="page-preview__title">—</div>
+          <div id="pageUrl" class="page-preview__url mono">—</div>
+        </div>
+      </label>
+
+      <div class="field">
+        <span class="field__label">同时分析的 AI（可选）</span>
+        <select id="providerSelect" class="select" multiple size="3"></select>
+      </div>
+
+      <button id="sendBtn" class="btn btn--primary" type="button">
+        发送到 Vid2Know
+      </button>
+
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+
+      <details class="settings">
+        <summary>设置</summary>
+        <label class="field">
+          <span class="field__label">API 地址</span>
+          <input id="apiBaseInput" class="input" type="text" placeholder="http://127.0.0.1:8080" />
+        </label>
+        <div class="settings__actions">
+          <button id="saveApiBaseBtn" class="btn btn--ghost" type="button">保存</button>
+          <button id="testApiBaseBtn" class="btn btn--ghost" type="button">测试连接</button>
+        </div>
+      </details>
+    </main>
+
+    <footer class="footer">
+      <a id="openAppLink" href="#" target="_blank" rel="noreferrer">打开 Vid2Know 网页版 ↗</a>
+    </footer>
+
+    <script src="common.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
