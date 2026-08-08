@@ -22,10 +22,16 @@ def _defaults() -> dict:
         "cookies_file": settings.cookies_file,
         "auto_delete_video": settings.auto_delete_video,
         "whisper_model": settings.whisper_model,
+        "whisper_device": settings.whisper_device,
         "ocr_enabled": settings.ocr_enabled,
         "scene_threshold": settings.scene_threshold,
         "max_keyframes": settings.max_keyframes,
         "default_locale": settings.default_locale,
+        "prefer_soft_subtitles": settings.prefer_soft_subtitles,
+        "analysis_language": settings.analysis_language,
+        "cookie_custom_sites": settings.cookie_custom_sites,
+        "host_notes_root": settings.host_notes_root,
+        "path_hint": settings.path_hint,
     }
 
 

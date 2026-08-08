@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     video_cache_root: str = "/data/cache"
     cookies_file: str = ""
     providers_file: str = "/config/providers.yaml"
+    fernet_key_file: str = "/config/fernet.key"
     auto_delete_video: bool = True
 
     whisper_model: str = "base"
@@ -27,6 +28,18 @@ class Settings(BaseSettings):
     max_keyframes: int = 80
     default_locale: str = "zh-CN"
     cors_origins: str = "http://localhost:8080,http://localhost:5173"
+
+    # Analysis / subtitles
+    prefer_soft_subtitles: bool = True
+    analysis_language: str = "zh-CN"
+    cookie_custom_sites: str = ""
+
+    # UI-only hints
+    host_notes_root: str = ""
+    path_hint: str = ""
+
+    # Optional embeddings provider id (an entry in providers.yaml / DB)
+    embeddings_provider_id: str = ""
 
 
 settings = Settings()
