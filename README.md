@@ -6,11 +6,13 @@
 
 ## 功能
 
-- 输入视频 URL（B 站 / YouTube 等，底层 `yt-dlp`）或上传本地视频
+- 输入视频 URL（B 站 / YouTube 等，底层 `yt-dlp`）或上传本地视频；支持时间片段裁切
 - 优先官方字幕，无字幕则 `faster-whisper` 转写
-- 场景检测抽关键帧，图片保存到可配置本地目录
-- PaddleOCR 提取画面文字
-- Cherry Studio 风格 Provider Hub：OpenAI Compatible / Claude / Gemini，随意切换，多模型并行分析
+- 场景检测抽关键帧（按时长自适应上限），OCR 提取画面文字
+- 分析模板：图文知识点 / 精要 / 教程 / 考点；多模型并行 + Token 用量
+- 取消 / 阶段重试 / 检查点续跑；笔记 ZIP / MD / DOCX / PDF / XMind 导出
+- 任务搜索（精确 / 语义）、暗色主题、zh/en/ja 界面
+- Provider Hub（API Key Fernet 本地加密）+ 浏览器扩展「发送到影知」
 - Web（Docker）+ Electron 桌面壳
 
 ## 快速开始（Docker）

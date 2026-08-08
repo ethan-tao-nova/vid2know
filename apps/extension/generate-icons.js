@@ -120,7 +120,7 @@ function makePixelFn(size) {
 function main() {
   const outDir = path.join(__dirname, "icons");
   fs.mkdirSync(outDir, { recursive: true });
-  for (const size of [16, 48, 128]) {
+  for (const size of [16, 32, 48, 128]) {
     const png = encodePng(size, makePixelFn(size));
     const file = path.join(outDir, `icon${size}.png`);
     fs.writeFileSync(file, png);

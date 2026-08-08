@@ -1,90 +1,115 @@
-const DEFAULT_BASE = "http://localhost:8080";
-
-const urlEl = document.getElementById("url");
-const baseEl = document.getElementById("base");
-const providersEl = document.getElementById("providers");
-const sendEl = document.getElementById("send");
+const pageTitleEl = document.getElementById("pageTitle");
+const pageUrlEl = document.getElementById("pageUrl");
+const providerSelectEl = document.getElementById("providerSelect");
+const sendBtn = document.getElementById("sendBtn");
 const statusEl = document.getElementById("status");
+const apiBaseInput = document.getElementById("apiBaseInput");
+const saveApiBaseBtn = document.getElementById("saveApiBaseBtn");
+const testApiBaseBtn = document.getElementById("testApiBaseBtn");
+const openAppLink = document.getElementById("openAppLink");
+
+let currentTab = null;
 
 function setStatus(text, kind) {
   statusEl.textContent = text;
-  statusEl.className = "status" + (kind ? " " + kind : "");
+  statusEl.className = "status" + (kind ? ` status--${kind}` : "");
+}
+
+async function getActiveTab() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  return tab || null;
+}
+
+async function loadProviders(apiBase) {
+  providerSelectEl.innerHTML = "";
+  try {
+    const base = apiBase.replace(/\/+$/, "");
+    const res = await fetch(`${base}/api/providers`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const providers = await res.json();
+    const enabled = providers.filter((p) => p.enabled && p.has_api_key);
+    for (const p of enabled) {
+      const opt = document.createElement("option");
+      opt.value = p.id;
+      opt.textContent = `${p.name} · ${p.default_model}`;
+      providerSelectEl.appendChild(opt);
+    }
+    if (enabled.length === 0) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "（尚未配置可用模型）";
+      opt.disabled = true;
+      providerSelectEl.appendChild(opt);
+    }
+  } catch {
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "（无法连接后端，仅生成原文笔记）";
+    opt.disabled = true;
+    providerSelectEl.appendChild(opt);
+  }
+}
+
+function selectedProviderIds() {
+  return Array.from(providerSelectEl.selectedOptions)
+    .map((o) => o.value)
+    .filter(Boolean);
 }
 
 async function init() {
-  // Prefill URL from the active tab.
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab && tab.url && /^https?:/i.test(tab.url)) {
-      urlEl.value = tab.url;
-    }
-  } catch (e) {
-    /* ignore */
+  currentTab = await getActiveTab();
+  pageTitleEl.textContent = currentTab?.title || "未检测到页面";
+  pageUrlEl.textContent = currentTab?.url || "-";
+
+  const apiBase = await Vid2Know.getApiBase();
+  apiBaseInput.value = apiBase;
+  openAppLink.href = apiBase;
+
+  const isSupported = currentTab?.url ? Vid2Know.isVideoUrl(currentTab.url) : false;
+  if (currentTab?.url && !/^https?:\/\//.test(currentTab.url)) {
+    sendBtn.disabled = true;
+    setStatus("该页面不支持发送（非 http/https 链接）。", "error");
+  } else if (!isSupported) {
+    setStatus("提示：当前页面看起来不是已知的视频站点，仍可尝试发送。");
   }
 
-  // Load saved settings.
-  try {
-    const { apiBase, providerIds } = await chrome.storage.sync.get([
-      "apiBase",
-      "providerIds",
-    ]);
-    baseEl.value = apiBase || DEFAULT_BASE;
-    if (Array.isArray(providerIds)) providersEl.value = providerIds.join(", ");
-    else if (typeof providerIds === "string") providersEl.value = providerIds;
-  } catch (e) {
-    baseEl.value = DEFAULT_BASE;
-  }
+  await loadProviders(apiBase);
 }
 
-async function saveSettings() {
-  const apiBase = (baseEl.value || DEFAULT_BASE).trim().replace(/\/+$/, "");
-  const providerIds = providersEl.value
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
+sendBtn.addEventListener("click", async () => {
+  if (!currentTab?.url) return;
+  sendBtn.disabled = true;
+  setStatus("正在发送…");
   try {
-    await chrome.storage.sync.set({ apiBase, providerIds });
-  } catch (e) {
-    /* ignore */
-  }
-  return { apiBase, providerIds };
-}
-
-async function send() {
-  const url = urlEl.value.trim();
-  if (!url) {
-    setStatus("请输入视频网址", "err");
-    return;
-  }
-  sendEl.disabled = true;
-  setStatus("发送中…");
-  const { apiBase, providerIds } = await saveSettings();
-  try {
-    const res = await fetch(`${apiBase}/api/tasks`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url, provider_ids: providerIds }),
+    const apiBase = await Vid2Know.getApiBase();
+    const task = await Vid2Know.createTask(apiBase, currentTab.url, {
+      providerIds: selectedProviderIds(),
     });
-    if (!res.ok) {
-      let detail = `HTTP ${res.status}`;
-      try {
-        const data = await res.json();
-        detail = data.detail || data.message || detail;
-      } catch (e) {
-        /* ignore */
-      }
-      throw new Error(detail);
-    }
-    setStatus("任务已创建，正在生成笔记。", "ok");
-  } catch (e) {
-    setStatus("失败：" + (e.message || e), "err");
+    setStatus(`已创建任务${task?.title ? `：${task.title}` : ""}`, "ok");
+  } catch (err) {
+    setStatus(`发送失败：${err instanceof Error ? err.message : String(err)}`, "error");
   } finally {
-    sendEl.disabled = false;
+    sendBtn.disabled = false;
   }
-}
+});
 
-sendEl.addEventListener("click", send);
-baseEl.addEventListener("change", saveSettings);
-providersEl.addEventListener("change", saveSettings);
+saveApiBaseBtn.addEventListener("click", async () => {
+  const value = apiBaseInput.value.trim() || Vid2Know.DEFAULT_API_BASE;
+  await Vid2Know.setApiBase(value);
+  openAppLink.href = value;
+  setStatus("已保存 API 地址。", "ok");
+  await loadProviders(value);
+});
+
+testApiBaseBtn.addEventListener("click", async () => {
+  const value = apiBaseInput.value.trim() || Vid2Know.DEFAULT_API_BASE;
+  setStatus("正在测试连接…");
+  try {
+    await Vid2Know.checkHealth(value);
+    setStatus("连接成功。", "ok");
+  } catch (err) {
+    setStatus(`连接失败：${err instanceof Error ? err.message : String(err)}`, "error");
+  }
+});
 
 init();

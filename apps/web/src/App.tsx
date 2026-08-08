@@ -23,7 +23,6 @@ import LogsPage from "./pages/LogsPage";
 import { useT, useLocaleContext } from "./i18n/LocaleContext";
 import { LOCALE_OPTIONS } from "./i18n/locales";
 import { useTheme, type ThemeMode } from "./theme/ThemeContext";
-import { HomeDraftProvider } from "./state/HomeDraftContext";
 import { fetchHealth, logsAvailable } from "./api/client";
 
 const { Header, Content } = Layout;
@@ -156,9 +155,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <HomeDraftProvider>
-        <Shell showLogs={showLogs} />
-      </HomeDraftProvider>
+      <Shell showLogs={showLogs} />
     </BrowserRouter>
   );
 }
