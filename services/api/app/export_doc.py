@@ -95,28 +95,40 @@ def markdown_to_docx(markdown: str, out_path: Path, base_dir: Path | None = None
     return out_path
 
 
-def _register_font(pdf: FPDF) -> str:
+def _register_font(pdf: FPDF) -> tuple[str, set[str]]:
+    """Register a unicode-capable font; returns ``(family, available_styles)``.
+
+    The same font file is registered for regular/bold/italic variants so any
+    requested style resolves without raising, even if the file has no real bold.
+    """
     for candidate in _CJK_FONT_CANDIDATES:
-        if Path(candidate).exists():
+        if not Path(candidate).exists():
+            continue
+        styles: set[str] = set()
+        for style in ("", "B", "I", "BI"):
             try:
-                pdf.add_font("note", "", candidate)
-                return "note"
+                pdf.add_font("note", style, candidate)
+                styles.add(style)
             except Exception:  # noqa: BLE001
                 continue
-    return "Helvetica"
+        if styles:
+            return "note", styles
+    # Built-in Helvetica supports all core styles (latin-1 only).
+    return "Helvetica", {"", "B", "I", "BI"}
 
 
 def markdown_to_pdf(markdown: str, out_path: Path, base_dir: Path | None = None) -> Path:
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
-    font = _register_font(pdf)
+    font, styles = _register_font(pdf)
     unicode_ok = font != "Helvetica"
 
     def write(text: str, size: int = 11, style: str = "") -> None:
-        pdf.set_font(font, style if unicode_ok else style, size)
+        effective = style if style in styles else ""
+        pdf.set_font(font, effective, size)
         safe = text if unicode_ok else text.encode("latin-1", "replace").decode("latin-1")
-        pdf.multi_cell(0, size * 0.6, safe)
+        pdf.multi_cell(w=0, h=size * 0.6, text=safe, new_x="LMARGIN", new_y="NEXT")
 
     in_code = False
     for raw in markdown.splitlines():
