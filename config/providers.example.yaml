@@ -1,0 +1,63 @@
+# Copy to config/providers.yaml and fill in API keys.
+# Keys are never committed — keep providers.yaml out of git.
+
+providers:
+  - id: openai
+    name: OpenAI
+    type: openai_compatible
+    enabled: false
+    base_url: https://api.openai.com/v1
+    api_key: sk-REPLACE_ME
+    default_model: gpt-4o-mini
+    temperature: 0.3
+    timeout_seconds: 120
+
+  - id: deepseek
+    name: DeepSeek
+    type: openai_compatible
+    enabled: false
+    base_url: https://api.deepseek.com/v1
+    api_key: sk-REPLACE_ME
+    default_model: deepseek-chat
+    temperature: 0.3
+    timeout_seconds: 120
+
+  - id: siliconflow
+    name: SiliconFlow
+    type: openai_compatible
+    enabled: false
+    base_url: https://api.siliconflow.cn/v1
+    api_key: sk-REPLACE_ME
+    default_model: deepseek-ai/DeepSeek-V3
+    temperature: 0.3
+    timeout_seconds: 120
+
+  - id: ollama
+    name: Ollama Local
+    type: openai_compatible
+    enabled: false
+    base_url: http://host.docker.internal:11434/v1
+    api_key: ollama
+    default_model: llama3.2
+    temperature: 0.3
+    timeout_seconds: 300
+
+  - id: anthropic
+    name: Anthropic Claude
+    type: anthropic
+    enabled: false
+    base_url: https://api.anthropic.com
+    api_key: sk-ant-REPLACE_ME
+    default_model: claude-3-5-sonnet-latest
+    temperature: 0.3
+    timeout_seconds: 120
+
+  - id: gemini
+    name: Google Gemini
+    type: gemini
+    enabled: false
+    base_url: https://generativelanguage.googleapis.com/v1beta
+    api_key: REPLACE_ME
+    default_model: gemini-2.0-flash
+    temperature: 0.3
+    timeout_seconds: 120

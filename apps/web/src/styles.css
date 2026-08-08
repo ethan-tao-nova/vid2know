@@ -1,0 +1,71 @@
+:root {
+  color-scheme: light;
+  --bg: #f3f6f4;
+  --ink: #14241f;
+  --panel: #ffffff;
+  --accent: #0f6e56;
+  --muted: #5b6f68;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Source Han Sans SC", "Noto Sans SC", "Segoe UI", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #d7efe6 0%, transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, #e8f0ff 0%, transparent 50%),
+    var(--bg);
+}
+
+.app-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: 0.02em;
+}
+
+.brand span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.hero-line {
+  margin: 0 0 20px;
+  color: var(--muted);
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid #d9e5df;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 24px rgba(20, 36, 31, 0.04);
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}

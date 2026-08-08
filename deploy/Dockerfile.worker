@@ -1,0 +1,25 @@
+ARG PYTHON_IMAGE=docker.m.daocloud.io/library/python:3.11-slim-bookworm
+FROM ${PYTHON_IMAGE}
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    libgl1 \
+    libglib2.0-0 \
+    libgomp1 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY services/worker/requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt \
+    -i https://pypi.tuna.tsinghua.edu.cn/simple \
+    && pip install --no-cache-dir paddlepaddle==2.6.2 \
+      -i https://www.paddlepaddle.org.cn/packages/stable/cpu/ || true
+
+COPY services/worker/worker /app/worker
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+CMD ["celery", "-A", "worker.tasks.celery_app", "worker", "--loglevel=INFO", "--concurrency=1"]

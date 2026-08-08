@@ -1,0 +1,108 @@
+services:
+  postgres:
+    image: docker.m.daocloud.io/library/postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vid2know}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vid2know_change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-vid2know}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vid2know}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: docker.m.daocloud.io/library/redis:7-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://vid2know:vid2know_change_me@postgres:5432/vid2know}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/1}
+      NOTES_ROOT: /data/notes
+      UPLOAD_ROOT: /data/uploads
+      CACHE_ROOT: /data/cache
+      PROVIDERS_FILE: /config/providers.yaml
+      COOKIES_FILE: ${COOKIES_FILE:-}
+    volumes:
+      - ../data/notes:/data/notes
+      - ../data/uploads:/data/uploads
+      - ../data/cache:/data/cache
+      - ../config:/config
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    expose:
+      - "8000"
+
+  worker:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.worker
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://vid2know:vid2know_change_me@postgres:5432/vid2know}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/1}
+      NOTES_ROOT: /data/notes
+      UPLOAD_ROOT: /data/uploads
+      CACHE_ROOT: /data/cache
+      PROVIDERS_FILE: /config/providers.yaml
+      COOKIES_FILE: ${COOKIES_FILE:-}
+      WHISPER_MODEL: ${WHISPER_MODEL:-base}
+      WHISPER_DEVICE: ${WHISPER_DEVICE:-cpu}
+      WHISPER_COMPUTE_TYPE: ${WHISPER_COMPUTE_TYPE:-int8}
+    volumes:
+      - ../data/notes:/data/notes
+      - ../data/uploads:/data/uploads
+      - ../data/cache:/data/cache
+      - ../config:/config
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_started
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.web
+    depends_on:
+      - api
+    expose:
+      - "80"
+
+  gateway:
+    image: docker.m.daocloud.io/library/nginx:1.27-alpine
+    ports:
+      - "${APP_PORT:-8080}:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api
+      - web
+
+volumes:
+  postgres_data:
+  redis_data:
