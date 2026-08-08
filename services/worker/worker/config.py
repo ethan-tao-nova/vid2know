@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     scene_threshold: float = 27.0
     max_keyframes: int = 80
     default_locale: str = "zh-CN"
+    analysis_language: str = "zh-CN"
+    prefer_soft_subtitles: bool = True
+    fernet_key_file: str = "/config/fernet.key"
 
 
 settings = Settings()
